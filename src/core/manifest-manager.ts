@@ -1,0 +1,263 @@
+import type { Draft } from 'immer';
+import type { NoteManifest } from "@/types";
+import { PathService } from "@/core";
+import { CentralManifestRepository } from "@/core";
+import { NoteManifestRepository } from "@/core";
+import type { StorageService } from "@/core";
+import { generateUniqueId } from '@/utils/id';
+
+/**
+ * A high-level facade that coordinates operations across the manifest repositories.
+ * It handles complex, multi-step operations that involve both the central and note manifests.
+ */
+export class ManifestManager {
+    constructor(
+        private pathService: PathService,
+        private storageService: StorageService,
+        private centralManifestRepo: CentralManifestRepository,
+        private noteManifestRepo: NoteManifestRepository
+    ) {
+    }
+
+    async initializeDatabase(): Promise<void> {
+        try {
+            await this.storageService.ensureFolderExists(this.pathService.getDbRoot());
+            await this.centralManifestRepo.load(true);
+        } catch (error) {
+            console.error("VC: CRITICAL: Failed to initialize database structure.", error);
+            const message = error instanceof Error ? error.message : "Could not initialize database. Check vault permissions and console.";
+            throw new Error(message);
+        }
+    }
+
+    /**
+     * Checks if multiple noteIds exist for a specific path.
+     * If duplicates found:
+     * 1. Identifies winner (oldest) and losers.
+     * 2. Removes losers from Central Manifest.
+     * 3. Deletes physical version history folders for losers.
+     * 4. Returns the winner ID and the list of loser IDs.
+     */
+    public async resolveDuplicatesForPath(path: string): Promise<{ winnerId: string | null; loserIds: string[] }> {
+        const centralManifest = await this.centralManifestRepo.load();
+        const matches: { id: string; createdAt: string }[] = [];
+
+        for (const [id, entry] of Object.entries(centralManifest.notes)) {
+            if (!entry) continue;
+            if (entry.notePath === path) {
+                matches.push({ id, createdAt: entry.createdAt });
+            }
+        }
+
+        if (matches.length === 0) return { winnerId: null, loserIds: [] };
+
+        if (matches.length === 1) return { winnerId: matches[0]!.id, loserIds: [] };
+
+        // Multiple matches found. Sort by createdAt ascending (oldest first).
+        // If createdAt is invalid or same, fallback to ID string comparison for determinism.
+        matches.sort((a, b) => {
+            const timeA = new Date(a.createdAt).getTime();
+            const timeB = new Date(b.createdAt).getTime();
+            if (timeA !== timeB) return timeA - timeB;
+            return a.id.localeCompare(b.id);
+        });
+
+        const winner = matches[0]!;
+        const losers = matches.slice(1);
+        const loserIds = losers.map(l => l.id);
+
+        console.log(`VC: Resolving duplicates for "${path}". Winner: ${winner.id}. Removing: ${loserIds.join(', ')}`);
+
+        // Remove losers from central manifest AND delete physical folders
+        for (const loserId of loserIds) {
+            await this.centralManifestRepo.removeNoteEntry(loserId);
+            
+            // Delete physical folder
+            const noteDbPath = this.pathService.getNoteDbPath(loserId);
+            await this.storageService.permanentlyDeleteFolder(noteDbPath).catch(err => {
+                console.error(`VC: Failed to delete physical folder for duplicate note ${loserId}`, err);
+            });
+            
+            this.noteManifestRepo.invalidateCache(loserId);
+        }
+
+        return { winnerId: winner.id, loserIds };
+    }
+
+    public async createNoteEntry(noteId: string, notePath: string): Promise<NoteManifest> {
+        if (!noteId || !notePath) {
+            throw new Error("Eidology: Invalid noteId or notePath for createNoteEntry.");
+        }
+
+        const noteDbPath = this.pathService.getNoteDbPath(noteId);
+        const versionsPath = this.pathService.getNoteVersionsPath(noteId);
+
+        try {
+            await this.storageService.ensureFolderExists(noteDbPath);
+            await this.storageService.ensureFolderExists(versionsPath);
+
+            const newNoteManifest = await this.noteManifestRepo.create(noteId, notePath);
+
+            await this.centralManifestRepo.addNoteEntry(
+                noteId, 
+                notePath, 
+                this.pathService.getNoteManifestPath(noteId)
+            );
+            
+            return newNoteManifest;
+
+        } catch (error) {
+            console.error(`VC: Failed to create new note entry for ID ${noteId}. Attempting rollback.`, error);
+            await this.storageService.permanentlyDeleteFolder(noteDbPath);
+            this.noteManifestRepo.invalidateCache(noteId);
+            throw error;
+        }
+    }
+
+    /**
+     * Recovers a missing physical note manifest if the note exists in the central manifest.
+     * This is used during migration or recovery scenarios where the central registry knows about a note
+     * (e.g. from legacy edit history) but the file system structure is missing.
+     */
+    public async recoverMissingNoteManifest(noteId: string, notePath: string): Promise<NoteManifest> {
+        const noteDbPath = this.pathService.getNoteDbPath(noteId);
+        const versionsPath = this.pathService.getNoteVersionsPath(noteId);
+
+        try {
+            // Ensure physical folders exist
+            await this.storageService.ensureFolderExists(noteDbPath);
+            await this.storageService.ensureFolderExists(versionsPath);
+
+            // Create the physical manifest file.
+            // Note: We do NOT call centralManifestRepo.addNoteEntry because it should already be there.
+            const newNoteManifest = await this.noteManifestRepo.create(noteId, notePath);
+            return newNoteManifest;
+        } catch (error) {
+            console.error(`VC: Failed to recover note manifest for ID ${noteId}.`, error);
+            throw error;
+        }
+    }
+
+    public async deleteNoteEntry(noteId: string): Promise<void> {
+        try {
+            await this.centralManifestRepo.removeNoteEntry(noteId);
+
+            const noteDbPath = this.pathService.getNoteDbPath(noteId);
+            await this.storageService.permanentlyDeleteFolder(noteDbPath);
+
+            this.noteManifestRepo.invalidateCache(noteId);
+
+        } catch (error) {
+            console.error(`VC: Failed to complete deletion for note entry ID ${noteId}`, error);
+            throw new Error(`Failed to delete version history for a note. The operation may be incomplete.`);
+        }
+    }
+
+    /**
+     * Removes a note from the central manifest without touching its folder.
+     * Used when the folder is moved to the trash instead of being deleted.
+     */
+    public async detachNoteEntry(noteId: string): Promise<void> {
+        await this.centralManifestRepo.removeNoteEntry(noteId);
+        this.noteManifestRepo.invalidateCache(noteId);
+    }
+
+    /**
+     * Registers a note whose folder already exists in the database, such as one restored from
+     * the trash. Adds the central manifest entry and sets the note path in the note manifest.
+     */
+    public async attachExistingNote(noteId: string, notePath: string): Promise<void> {
+        this.noteManifestRepo.invalidateCache(noteId);
+        await this.centralManifestRepo.addNoteEntry(noteId, notePath, this.pathService.getNoteManifestPath(noteId));
+        await this.noteManifestRepo.update(noteId, (manifest) => {
+            manifest.notePath = notePath;
+            manifest.lastModified = new Date().toISOString();
+        });
+    }
+
+    public async updateNotePath(noteId: string, newPath: string): Promise<void> {
+        await this.noteManifestRepo.update(noteId, (manifest) => {
+            manifest.notePath = newPath;
+            manifest.lastModified = new Date().toISOString();
+        }).catch(err => {
+            console.warn(`VC: Attempted to update path for non-existent note manifest: ${noteId}. Error: ${err.message}`);
+        });
+
+        await this.centralManifestRepo.updateNotePath(noteId, newPath);
+    }
+
+    public async renameNoteEntry(oldId: string, newId: string): Promise<void> {
+        if (oldId === newId) return;
+
+        const oldDbPath = this.pathService.getNoteDbPath(oldId);
+        const newDbPath = this.pathService.getNoteDbPath(newId);
+
+        try {
+            await this.storageService.renameFolder(oldDbPath, newDbPath);
+
+            this.noteManifestRepo.invalidateCache(oldId);
+            
+            await this.noteManifestRepo.update(newId, (manifest) => {
+                manifest.noteId = newId;
+                manifest.lastModified = new Date().toISOString();
+            });
+
+            // Use atomic replacement to ensure strict path uniqueness is respected.
+            // Traditional add-then-remove would fail because the path is still claimed by oldId during add.
+            await this.centralManifestRepo.replaceNoteId(
+                oldId, 
+                newId, 
+                this.pathService.getNoteManifestPath(newId)
+            );
+
+        } catch (error) {
+            console.error(`VC: Failed to rename note entry from ${oldId} to ${newId}.`, error);
+            throw new Error(`Failed to rename version history folder. Check console for details.`);
+        }
+    }
+
+    public async ensureUniqueNoteId(candidateId: string): Promise<string> {
+        const centralManifest = await this.centralManifestRepo.load();
+        let uniqueId = candidateId;
+        let counter = 1;
+
+        while (centralManifest.notes[uniqueId]) {
+            uniqueId = `${candidateId}_${counter}`;
+            counter++;
+            if (counter > 100) {
+                uniqueId = `${candidateId}_${generateUniqueId()}`;
+                break;
+            }
+        }
+        return uniqueId;
+    }
+
+    // --- Delegated Methods ---
+
+    public loadCentralManifest(forceReload = false) {
+        return this.centralManifestRepo.load(forceReload);
+    }
+
+    public invalidateCentralManifestCache() {
+        this.centralManifestRepo.invalidateCache();
+    }
+
+    public getNoteIdByPath(path: string) {
+        return this.centralManifestRepo.getNoteIdByPath(path);
+    }
+
+    public loadNoteManifest(noteId: string) {
+        return this.noteManifestRepo.load(noteId);
+    }
+
+    public updateNoteManifest(
+        noteId: string, 
+        updateFn: (draft: Draft<NoteManifest>) => void
+    ) {
+        return this.noteManifestRepo.update(noteId, updateFn);
+    }
+
+    public invalidateNoteManifestCache(noteId: string) {
+        this.noteManifestRepo.invalidateCache(noteId);
+    }
+}

@@ -1,0 +1,94 @@
+/* Placeholder Component */
+.v-placeholder {
+    color: var(--text-muted);
+    text-align: center;
+    padding: var(--size-4-8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--size-4-2);
+    flex-grow: 1;
+    animation: v-fade-in 0.5s ease;
+}
+
+/* FIX: Use a more specific selector to ensure hidden placeholders are removed from the layout.
+   This rule's higher specificity (0,2,0) overrides the `display: flex` from the base 
+   `.v-placeholder` style (0,1,0) when the `.v-is-hidden` class is present. */
+.v-placeholder.v-is-hidden {
+    display: none;
+}
+
+.v-placeholder-icon {
+    font-size: 2.5em;
+    opacity: 0.5;
+}
+
+/* Empty State Component */
+.v-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--size-4-8) var(--size-4-4);
+    color: var(--text-muted);
+    flex-grow: 1;
+    animation: v-fade-in 0.5s ease;
+}
+.v-empty-state-icon {
+    font-size: 3em;
+    opacity: 0.3;
+    margin-bottom: var(--size-4-3);
+}
+
+/* Skeleton Loader Component */
+div.v-skeleton-item {
+    background-color: var(--background-secondary-alt);
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-s);
+    color: transparent; /* Hide any accidental text */
+    user-select: none;
+}
+
+div.v-skeleton-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--background-modifier-hover), transparent);
+    transform: translateX(-100%);
+    animation: v-shimmer 1.5s infinite;
+}
+
+/* Error Display Component */
+.v-error-display .v-placeholder-icon {
+    color: var(--color-red-rgb);
+}
+.v-error-display h3 {
+    color: var(--text-error);
+}
+.v-error-display .v-error-details {
+    background-color: var(--background-modifier-error-hover);
+    border: 1px solid var(--background-modifier-error);
+    padding: var(--size-4-2);
+    border-radius: var(--radius-s);
+    font-size: var(--font-ui-smaller);
+    max-height: 150px;
+    overflow-y: auto;
+    text-align: left;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-top: var(--size-4-2);
+}
+.v-error-display button.mod-cta {
+    margin-top: var(--size-4-3);
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+.v-error-display button.mod-cta:hover {
+    background-color: var(--interactive-accent-hover);
+}

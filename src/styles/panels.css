@@ -1,0 +1,620 @@
+/* Panel Overlay System */
+.v-panel-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    display: none;
+    background-color: var(--background-primary);
+    padding: 0;
+    animation: v-fade-in 0.25s ease;
+}
+
+.theme-dark .v-panel-container {
+    background-color: var(--background-secondary);
+}
+
+.v-panel-container.is-active {
+    display: flex;
+    flex-direction: column;
+}
+
+.v-panel-container > .v-inline-panel {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    animation: v-fade-in 0.2s ease;
+}
+
+.v-panel-container.is-modal-like:not(.is-drawer-like) {
+    background-color: rgba(var(--background-primary-rgb), 0.7);
+    justify-content: center;
+    align-items: center;
+    padding: var(--size-4-4);
+}
+
+.v-panel-container.is-modal-like > .v-inline-panel {
+    width: auto;
+    height: auto;
+    min-width: 300px;
+    max-width: 600px;
+    max-height: 80vh;
+    animation: v-fade-in 0.2s ease;
+    box-shadow: var(--shadow-l);
+    border-radius: var(--radius-l);
+    background-color: var(--background-secondary);
+    display: flex;
+    flex-direction: column;
+}
+
+.v-panel-container.is-drawer-like {
+    background-color: rgba(var(--background-primary-rgb), 0.7);
+    animation: v-fade-in 0.25s ease;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding-top: var(--size-4-8);
+    padding-left: var(--size-4-2);
+    padding-bottom: var(--size-4-2);
+    padding-right: var(--size-4-2);
+}
+
+.v-panel-container.is-drawer-like > .v-inline-panel.is-drawer {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-width: auto;
+    max-height: none;
+    animation: v-slide-in-left 0.25s ease-out;
+    box-shadow: var(--shadow-l);
+    border-radius: var(--radius-m);
+    background-color: var(--background-secondary);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Dashboard Panel Styles */
+.v-panel-container.is-dashboard-like {
+    background-color: rgba(var(--background-primary-rgb), 0.8);
+    justify-content: flex-start; /* Align to top */
+    align-items: center;
+    padding: 0;
+    padding-top: var(--size-4-8); /* Appropriate top padding */
+    backdrop-filter: blur(2px);
+}
+
+.v-inline-panel.is-dashboard {
+    width: 100%;
+    height: auto; /* Shrink to fit content so clicks below close it */
+    max-height: 80%; /* Don't take full height */
+    padding-left: 4px; /* Absolute minimum horizontal padding */
+    padding-right: 4px;
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.v-dashboard-card {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-l);
+    padding: var(--size-4-4);
+    box-shadow: var(--shadow-l);
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-4);
+    animation: v-fade-in 0.2s ease-out;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.v-dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: var(--size-4-2);
+}
+
+.v-dashboard-header h3 {
+    margin: 0;
+    font-size: var(--font-ui-medium);
+}
+
+.v-dashboard-subtitle {
+    font-size: var(--font-ui-small);
+    color: var(--text-muted);
+    font-family: var(--font-monospace);
+}
+
+/* New Dashboard Layout Structure */
+.v-dashboard-body {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    overflow: hidden;
+}
+
+.v-dashboard-labels {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Offset to match heatmap top padding (approx month label height) */
+    padding-top: 20px; 
+    padding-right: 6px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: var(--font-monospace);
+    user-select: none;
+    background: var(--background-secondary);
+    z-index: 2;
+}
+
+.v-dashboard-label-item {
+    height: 14px; /* Matches rectSize */
+    margin-bottom: 4px; /* Matches space */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.v-dashboard-heatmap-wrapper {
+    flex-grow: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* Hide scrollbar completely */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.v-dashboard-heatmap-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.v-dashboard-content svg text {
+    fill: var(--text-muted) !important;
+    font-size: 10px;
+}
+
+/* Legend Styles */
+.v-dashboard-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--background-modifier-border);
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.v-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.v-legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+@keyframes v-slide-in-left {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.v-inline-panel {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    background-color: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.v-action-panel .v-panel-header {
+    flex-shrink: 0;
+}
+
+.v-action-panel-filter {
+    padding: var(--size-4-2) var(--size-4-4);
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.v-action-panel-filter input {
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--background-modifier-border);
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+.v-action-panel-filter input:focus {
+    border-color: var(--interactive-accent);
+    box-shadow: none;
+}
+
+.v-action-panel-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: var(--size-4-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-1);
+}
+
+.is-drawer .v-action-panel-list {
+    gap: 0;
+}
+
+.v-action-panel-list-item-wrapper {
+    padding-bottom: var(--size-4-2);
+}
+
+.v-action-panel-item {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-3);
+    padding: var(--size-4-2) var(--size-4-3);
+    border-radius: var(--radius-m);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    outline: none;
+}
+
+.is-drawer .v-action-panel-item {
+    background-color: transparent;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.v-action-panel-item:hover,
+.v-action-panel-item:focus {
+    background-color: var(--background-modifier-hover);
+}
+
+.is-drawer .v-action-panel-item:hover,
+.is-drawer .v-action-panel-item:focus {
+    border-color: var(--interactive-accent);
+    background-color: var(--background-modifier-hover);
+}
+
+.is-drawer .v-action-panel-item:active {
+    border-color: var(--interactive-accent-hover);
+    background-color: var(--background-modifier-active);
+}
+
+.v-action-panel-item:focus {
+    box-shadow: 0 0 0 2px var(--interactive-accent);
+}
+
+.v-action-item-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.v-action-item-text-wrapper {
+    flex-grow: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.v-action-item-text {
+    font-weight: var(--font-semibold);
+}
+
+.v-action-item-subtext {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+}
+
+.v-action-panel-empty {
+    padding: var(--size-4-4);
+    text-align: center;
+    color: var(--text-faint);
+}
+
+.v-inline-panel.v-preview-panel,
+.v-inline-panel.v-diff-panel {
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.v-panel-header {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-3);
+    padding: var(--size-4-3) var(--size-4-2) var(--size-4-2);
+    border-bottom: 1px solid var(--background-modifier-border);
+    flex-shrink: 0;
+    position: relative;
+    min-height: var(--input-height);
+    box-sizing: border-box;
+}
+.v-panel-header h3 {
+    margin: 0;
+    font-size: var(--font-ui-medium);
+    font-weight: var(--font-semibold);
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.v-panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    flex-shrink: 0;
+    margin-left: auto;
+}
+.v-panel-header .v-preview-toggle-btn {
+    margin-left: 0;
+    padding: var(--size-4-1);
+    height: calc(var(--icon-size) + 2 * var(--size-4-1));
+    width: calc(var(--icon-size) + 2 * var(--size-4-1));
+}
+.v-panel-close {
+    transition: transform 0.2s ease;
+}
+.v-panel-close:hover {
+    transform: scale(1.1);
+}
+
+/* --- Panel Search Bar --- */
+.v-panel-header-content {
+    position: absolute;
+    width: calc(100% - var(--size-4-2) * 2);
+    top: 50%;
+    left: var(--size-4-2);
+    display: flex;
+    align-items: center;
+    transform: translateY(-50%);
+    transition: opacity 0.2s ease-in-out;
+    justify-content: space-between;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+.v-panel-search-bar-container {
+    position: absolute;
+    /* Use left/right anchoring instead of width calc for robustness */
+    left: var(--size-4-2);
+    right: var(--size-4-2);
+    width: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.v-panel-header.is-searching .v-panel-header-content {
+    opacity: 0;
+    pointer-events: none;
+}
+.v-panel-header.is-searching .v-panel-search-bar-container {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Search Input Wrapper: Flexbox layout to handle long text and buttons */
+.v-panel-search-bar-container .v-search-input-wrapper {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--background-modifier-border);
+    /* Ensure it doesn't overflow the container */
+    min-width: 0; 
+}
+
+/* Search Icon: Static position inside flex container */
+.v-panel-search-bar-container .v-search-icon {
+    position: static !important;
+    transform: none !important;
+    color: var(--text-muted);
+    z-index: 2;
+    cursor: pointer;
+    padding: var(--size-4-1);
+    border-radius: var(--radius-s);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-left: var(--size-4-2);
+    margin-right: var(--size-4-1);
+    flex-shrink: 0;
+}
+.v-panel-search-bar-container .v-search-icon:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-error);
+}
+
+/* Search Input: Flex grow to fill available space, no border (moved to wrapper) */
+.v-panel-search-bar-container input[type="search"] {
+    flex-grow: 1;
+    width: auto;
+    min-width: 0; /* Allow shrinking */
+    padding-left: 0;
+    padding-right: var(--size-4-2);
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+    transition: none; /* Border transition handled by ::after */
+}
+.v-panel-search-bar-container input[type="search"]:focus {
+    box-shadow: none;
+}
+
+/* Animated bottom border */
+.v-panel-search-bar-container .v-search-input-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; /* Overlap the wrapper border */
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--interactive-accent);
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 3;
+}
+.v-panel-search-bar-container input[type="search"]:focus + .v-search-input-buttons,
+.v-panel-search-bar-container input[type="search"]:focus ~ .v-search-input-buttons {
+    /* No-op, just to keep selector specificity if needed later */
+}
+/* Trigger animation when input is focused (handled via JS class usually, or :focus-within) */
+.v-panel-search-bar-container .v-search-input-wrapper:focus-within::after {
+    width: 100%;
+}
+
+/* Buttons Container: Static position, prevent shrinking */
+.v-panel-search-bar-container .v-search-input-buttons {
+    position: static !important; /* Override any absolute positioning from global styles */
+    transform: none !important;
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-1);
+    margin-right: var(--size-4-2);
+    flex-shrink: 0;
+}
+
+.v-panel-search-bar-container .clickable-icon {
+    color: var(--text-muted);
+}
+.v-panel-search-bar-container .clickable-icon:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+.v-panel-search-bar-container .clickable-icon.is-active {
+    background-color: var(--color-purple-alpha);
+    color: var(--color-purple);
+}
+
+.v-search-match-count {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    padding: 0 var(--size-4-1);
+    user-select: none;
+    white-space: nowrap;
+}
+.v-panel-search-bar-container .v-search-nav-button:disabled {
+    color: var(--text-faint);
+    cursor: not-allowed;
+    background-color: transparent;
+}
+
+
+.v-confirmation-panel { 
+    text-align: center;
+    padding: var(--size-4-6); 
+    gap: var(--size-4-3); 
+}
+.v-confirmation-panel .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: var(--size-4-3); 
+    margin-top: var(--size-4-4);
+}
+.v-preview-panel-content, .v-diff-panel-content {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: var(--size-4-2) var(--size-4-1);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+.v-version-content-preview {
+    background-color: var(--background-secondary);
+    padding: var(--size-4-4);
+    border-radius: var(--radius-m);
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-grow: 1;
+    line-height: 1.5;
+    animation: v-fade-in 0.3s ease;
+    user-select: text;
+}
+.v-version-content-preview.is-plaintext {
+    overflow-y: hidden;
+    white-space: normal;
+    font-family: inherit;
+    padding: var(--size-4-3);
+}
+
+.v-plaintext-line {
+    white-space: pre-wrap;
+    font-family: var(--font-monospace);
+    font-size: var(--font-ui-smaller);
+    line-height: 1.5;
+    min-height: 1.5em;
+}
+
+.v-version-content-preview mark,
+.v-diff-content-wrapper mark {
+    background-color: var(--text-highlight-bg);
+    color: inherit;
+    border-radius: var(--radius-s);
+    box-shadow: 0 0 0 1px var(--text-highlight-bg);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    will-change: background-color, box-shadow;
+}
+
+/* Active Match Highlight: High contrast but readable */
+.v-version-content-preview mark.is-active-match,
+.v-diff-content-wrapper mark.is-active-match {
+    /* Lighter background to not obscure text */
+    background-color: rgba(var(--interactive-accent-rgb), 0.25);
+    color: inherit;
+    /* Strong border to make it noticeable */
+    box-shadow: 0 0 0 2px var(--interactive-accent);
+    border-radius: 2px;
+}
+
+.v-version-content-preview pre {
+    white-space: pre;
+    word-break: normal;
+    overflow-x: auto;
+    background-color: var(--background-primary);
+    padding: var(--size-4-3);
+    border-radius: var(--radius-s);
+}
+
+.v-version-content-preview .table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    margin-bottom: 1em;
+}
+
+.v-version-content-preview .table-wrapper table {
+    width: auto;
+    min-width: 100%;
+    border: none;
+    margin: 0;
+}

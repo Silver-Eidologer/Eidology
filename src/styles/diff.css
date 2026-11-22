@@ -1,0 +1,455 @@
+/* src/styles/diff.css */
+
+/* --- Main Panel Layout --- */
+.v-diff-panel-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--background-primary);
+}
+
+.v-diff-panel-content.is-loading {
+    align-items: center;
+    justify-content: center;
+    gap: var(--size-4-4);
+    color: var(--text-muted);
+}
+
+/* --- Header & Meta --- */
+.v-diff-panel-title {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    flex-grow: 1;
+    min-width: 0;
+    cursor: pointer;
+    user-select: none;
+}
+.v-diff-panel-title h3 {
+    margin: 0;
+    flex-grow: 0;
+}
+.v-diff-panel-title .lucide {
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+
+.v-diff-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-1);
+    margin-left: var(--size-4-2);
+    padding-left: var(--size-4-2);
+    border-left: 1px solid var(--background-modifier-border);
+}
+
+.v-diff-meta-container {
+    background-color: var(--background-secondary);
+    flex-shrink: 0;
+    will-change: grid-template-rows;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    min-height: 0;
+}
+
+.v-diff-meta-container.is-open {
+    grid-template-rows: 1fr;
+}
+
+.v-diff-meta-container:not(.is-open) {
+    visibility: hidden;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.3s;
+}
+
+.v-diff-meta-container.is-open {
+    visibility: visible;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
+}
+
+.v-diff-meta-content-wrapper {
+    min-height: 0;
+    padding: var(--size-4-2) var(--size-4-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-1);
+    border-bottom: 1px solid var(--background-modifier-border);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.v-diff-meta-content-wrapper .v-meta-label {
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+    font-family: var(--font-monospace);
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+}
+.v-meta-label::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.v-meta-label:first-child::before { background-color: var(--color-red); }
+.v-meta-label:last-child::before { background-color: var(--color-green); }
+
+
+/* --- Diff Content Area --- */
+.v-diff-content-wrapper {
+    font-family: var(--font-monospace);
+    font-size: var(--font-ui-smaller);
+    line-height: 1.5;
+    background-color: var(--background-primary);
+    overflow-y: auto;
+    flex: 1 1 0;
+    min-height: 0;
+    position: relative;
+    tab-size: 4;
+}
+
+/* Hide scrollbars specifically for the diff panel content */
+body .version-control-view.version-control-view .v-diff-content-wrapper div[data-virtuoso-scroller="true"]::-webkit-scrollbar {
+    display: none;
+}
+body .version-control-view.version-control-view .v-diff-content-wrapper div[data-virtuoso-scroller="true"] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Progress Overlay */
+.v-diff-progress-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(var(--background-primary-rgb), 0.8);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    gap: var(--size-4-3);
+    color: var(--text-muted);
+}
+.v-diff-progress-bar {
+    width: 200px;
+    height: 4px;
+    background-color: var(--background-modifier-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+.v-diff-progress-indicator {
+    width: 100%;
+    height: 100%;
+    background-color: var(--interactive-accent);
+    animation: v-progress-indeterminate 1.5s ease-in-out infinite;
+    transform-origin: left;
+}
+@keyframes v-progress-indeterminate {
+    0% { transform: translateX(-100%) scaleX(0.2); }
+    50% { transform: translateX(0%) scaleX(0.5); }
+    100% { transform: translateX(100%) scaleX(0.2); }
+}
+
+
+/* --- Line Diff Styles --- */
+.diff-line {
+    display: flex;
+    width: 100%;
+    min-height: 1.5em;
+    box-sizing: border-box;
+    border-left: 3px solid transparent; 
+    transition: background-color 0.1s ease;
+}
+
+/* Scroll Highlight Animation */
+@keyframes v-flash-highlight {
+    0% { background-color: var(--text-highlight-bg); }
+    100% { background-color: transparent; }
+}
+.diff-line.is-scrolled-to {
+    animation: v-flash-highlight 1.5s ease-out;
+}
+
+/* Gutter (Line Numbers) */
+.diff-line-gutter {
+    display: flex;
+    flex-shrink: 0;
+    min-width: 3.5rem; 
+    user-select: none;
+    padding: 0 var(--size-4-2);
+    background-color: var(--background-secondary);
+    border-right: 1px solid var(--background-modifier-border);
+    color: var(--text-muted);
+    justify-content: flex-end;
+    gap: var(--size-4-2);
+    align-items: flex-start;
+}
+
+.diff-line-num {
+    display: inline-block;
+    width: 3ch;
+    text-align: right;
+    opacity: 0.7;
+}
+.diff-line-num.old { color: var(--text-faint); }
+.diff-line-num.new { color: var(--text-muted); }
+
+
+/* Content Area */
+.diff-line-content {
+    flex-grow: 1;
+    white-space: pre-wrap;
+    word-break: break-all;
+    padding: 0 var(--size-4-3);
+    user-select: text;
+    position: relative;
+    display: flex;
+}
+
+/* Split View: Wrap Content */
+.v-diff-split-view .diff-line-content {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Marker (+/-) */
+.diff-line-marker {
+    display: inline-block;
+    width: 1.5ch;
+    flex-shrink: 0;
+    user-select: none;
+    opacity: 0.6;
+    font-weight: bold;
+}
+
+/* Text */
+.diff-line-text {
+    flex-grow: 1;
+}
+
+
+/* --- Change Types & Modes --- */
+
+/* Default backgrounds (Smart, Lines) */
+.diff-add {
+    background-color: rgba(var(--color-green-rgb), 0.12);
+    border-left-color: var(--color-green);
+}
+.diff-add .diff-line-gutter {
+    background-color: rgba(var(--color-green-rgb), 0.18);
+    color: var(--text-normal);
+}
+.diff-add .diff-line-marker {
+    color: var(--color-green);
+}
+
+.diff-remove {
+    background-color: rgba(var(--color-red-rgb), 0.12);
+    border-left-color: var(--color-red);
+}
+.diff-remove .diff-line-gutter {
+    background-color: rgba(var(--color-red-rgb), 0.18);
+    color: var(--text-normal);
+}
+.diff-remove .diff-line-marker {
+    color: var(--color-red);
+}
+
+/* Word/Char Mode Overrides: No line background */
+.diff-mode-words .diff-add,
+.diff-mode-chars .diff-add,
+.diff-mode-words .diff-remove,
+.diff-mode-chars .diff-remove {
+    background-color: transparent;
+    border-left-color: transparent;
+}
+.diff-mode-words .diff-add .diff-line-gutter,
+.diff-mode-chars .diff-add .diff-line-gutter,
+.diff-mode-words .diff-remove .diff-line-gutter,
+.diff-mode-chars .diff-remove .diff-line-gutter {
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+}
+
+/* Context Lines */
+.diff-context {
+    background-color: transparent;
+}
+.diff-context:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* Collapsed Lines (Smart Diff) */
+.diff-collapsed {
+    background-color: var(--background-secondary);
+    border-top: 1px solid var(--background-modifier-border);
+    border-bottom: 1px solid var(--background-modifier-border);
+    min-height: 1.5em;
+    color: var(--text-muted);
+}
+.diff-collapsed .diff-line-gutter {
+    background-color: var(--background-secondary);
+}
+.diff-collapsed-marker {
+    display: block;
+    text-align: center;
+    width: 100%;
+    font-weight: bold;
+    letter-spacing: 2px;
+    opacity: 0.5;
+}
+
+/* Segment Highlights */
+/* Common highlight styles */
+.diff-segment-add,
+.diff-word-add,
+.diff-char-add {
+    background-color: rgba(var(--color-green-rgb), 0.3);
+    border-radius: 2px;
+}
+
+.diff-segment-remove,
+.diff-word-remove,
+.diff-char-remove {
+    background-color: rgba(var(--color-red-rgb), 0.3);
+    border-radius: 2px;
+    text-decoration: line-through;
+}
+
+/* Specific intensity adjustments if needed */
+.diff-char-add {
+    background-color: rgba(var(--color-green-rgb), 0.4);
+}
+.diff-char-remove {
+    background-color: rgba(var(--color-red-rgb), 0.4);
+}
+
+
+/* --- Split View (Side-by-Side) --- */
+/* Enable horizontal scrolling for the container */
+.v-virtuoso-container.v-diff-split-view {
+    overflow-x: auto !important; /* Force override virtuoso defaults if needed */
+}
+
+/* Ensure the scroller inner div allows width expansion but enforces wrapping */
+.v-virtuoso-container.v-diff-split-view > div[data-virtuoso-scroller="true"] > div[data-virtuoso-item-list="true"] {
+    min-width: max(100%, 700px); /* Ensure space for 2x350px columns */
+    width: auto;
+}
+
+.diff-split-row {
+    display: flex;
+    width: 100%;
+    border-bottom: 1px solid transparent;
+}
+
+.diff-split-cell {
+    flex: 1;
+    /* Ensure cells don't shrink below a readable width, forcing scroll */
+    min-width: 350px; 
+    border-right: 1px solid var(--background-modifier-border);
+    display: flex;
+    flex-direction: column;
+}
+.diff-split-cell:last-child {
+    border-right: none;
+}
+
+.diff-split-cell .diff-line {
+    border-left-width: 0; /* Remove left border in split view to save space */
+    flex-grow: 1; /* Ensure background fills cell height */
+}
+
+/* Split View Gutter Optimizations */
+.diff-line[data-display-mode="left"] .diff-line-num.new,
+.diff-line[data-display-mode="right"] .diff-line-num.old {
+    display: none;
+}
+
+.diff-line[data-display-mode="left"] .diff-line-gutter,
+.diff-line[data-display-mode="right"] .diff-line-gutter {
+    min-width: 3rem; /* Reduced width for single number */
+    padding-right: var(--size-4-2);
+}
+
+/* Empty cell placeholder */
+.diff-empty-cell {
+    background-color: transparent;
+    background-image: none;
+    height: 100%;
+    width: 100%;
+}
+
+/* --- Search Highlighting --- */
+mark.is-active-match {
+    background-color: rgba(var(--interactive-accent-rgb), 0.25);
+    color: inherit;
+    box-shadow: 0 0 0 2px var(--interactive-accent);
+    border-radius: 2px;
+}
+
+/* --- Dropdown Menu --- */
+.v-diff-dropdown-trigger {
+    padding: var(--size-4-1);
+    height: calc(var(--icon-size) + var(--size-4-2));
+    width: calc(var(--icon-size) + var(--size-4-2));
+}
+
+.v-diff-dropdown-content,
+.v-diff-dropdown-sub-content {
+    min-width: 180px;
+    background-color: var(--background-secondary);
+    border-radius: var(--radius-m);
+    padding: var(--size-4-1);
+    box-shadow: var(--shadow-l);
+    border: 1px solid var(--background-modifier-border);
+    z-index: 10002;
+    animation: v-fade-in 0.1s ease-out;
+}
+
+.v-diff-dropdown-item,
+.v-diff-dropdown-sub-trigger {
+    font-size: var(--font-ui-small);
+    padding: var(--size-4-2) var(--size-4-3);
+    border-radius: var(--radius-s);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    outline: none;
+    color: var(--text-normal);
+    user-select: none;
+}
+
+.v-diff-dropdown-item:hover,
+.v-diff-dropdown-item[data-highlighted],
+.v-diff-dropdown-sub-trigger:hover,
+.v-diff-dropdown-sub-trigger[data-highlighted] {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+.v-diff-dropdown-item[data-highlighted] .lucide,
+.v-diff-dropdown-sub-trigger[data-highlighted] .lucide {
+    color: var(--text-on-accent);
+}
+
+.v-diff-dropdown-item .lucide,
+.v-diff-dropdown-sub-trigger .lucide {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+}
+
+.v-diff-separator {
+    height: 1px;
+    background-color: var(--background-modifier-border);
+    margin: var(--size-4-1) 0;
+}

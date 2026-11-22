@@ -1,0 +1,262 @@
+/* src/styles/base.css */
+/* Global utility class to hide elements without using inline styles */
+.v-is-hidden {
+    display: none;
+}
+
+/* Global class for react-virtuoso containers to ensure they fill their parent */
+.v-virtuoso-container {
+    height: 100%;
+}
+
+.version-control-view {
+    height: 100%;
+}
+
+.version-control-react-root {
+    height: 100%;
+    width: 100%;
+}
+
+.version-control-error {
+    padding: 1rem;
+    color: var(--text-error);
+    text-align: center;
+}
+
+/* General View Styles */
+.version-control-view {
+    padding: 0;
+}
+
+.version-control-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    position: relative; /* For processing overlay AND absolute header */
+}
+
+/* Global processing state to prevent concurrent actions */
+.version-control-content.is-processing {
+    cursor: wait;
+}
+.version-control-content.is-processing::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--background-primary);
+    opacity: 0.5;
+    z-index: 100;
+}
+.version-control-content.is-processing button,
+.version-control-content.is-processing input,
+.version-control-content.is-processing .clickable-icon,
+.version-control-content.is-processing .v-history-entry.is-list-view,
+.version-control-content.is-processing .setting-item-control {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Global state to disable the action bar when an overlay panel is active */
+.version-control-content.is-overlay-active .v-actions-container {
+    pointer-events: none;
+    opacity: 0.6;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Wrapper for the fixed header */
+.v-header-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.v-main {
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%; /* Ensure it fills parent for correct padding-top behavior */
+}
+
+/* NEW: Floating Action Button for save versions */
+.v-fab-save-button {
+    position: absolute;
+    bottom: var(--size-4-4);
+    right: var(--size-4-4);
+    z-index: 30; /* Below panels (50) and settings (40) */
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* FIX: Mobile-first size for better touch interaction */
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    box-shadow: var(--shadow-m);
+    
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                background-color 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+.v-fab-save-button .lucide {
+    /* FIX: Icon size for mobile */
+    width: 28px;
+    height: 28px;
+}
+
+/* NEW: Adjust size for desktop environments with precise pointers */
+@media (hover: hover) and (pointer: fine) {
+    .v-fab-save-button {
+        width: 48px;
+        height: 48px;
+    }
+    .v-fab-save-button .lucide {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+.v-fab-save-button:hover:not(:disabled) {
+    background-color: var(--interactive-accent-hover);
+    transform: scale(1.05);
+    box-shadow: var(--shadow-l);
+}
+
+.v-fab-save-button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.v-fab-save-button:disabled {
+    background-color: var(--background-modifier-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.v-ready-state-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* FIX: Add a more specific selector to ensure this container is hidden correctly.
+   This rule's higher specificity (0,2,0) overrides the `display: flex` from the base
+   `.v-ready-state-container` style (0,1,0) when the `.v-is-hidden` class is present,
+   preventing layout conflicts with the placeholder component. */
+.v-ready-state-container.v-is-hidden {
+    display: none;
+}
+
+/* NEW: Visual feedback for background search processing */
+.v-history-list.is-searching-bg {
+    opacity: 0.7;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* NEW: Style for indented sub-settings */
+.v-setting-item-sub-setting {
+    margin-left: var(--size-4-4);
+    padding-left: var(--size-4-4);
+    border-left: 2px solid var(--background-modifier-border);
+}
+
+/* Animations */
+@keyframes v-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+@keyframes v-fade-in {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/*
+ * SCROLLBAR HIDING RULES (HIGH SPECIFICITY)
+ *
+ * This section uses highly specific selectors to hide scrollbars across all plugin UI components.
+ * The `body` prefix and repeated view class (e.g., `.version-control-view.version-control-view`)
+ * are used to create a specificity high enough to override any Obsidian theme styles without
+ * resorting to `!important`.
+ *
+ * TARGETS:
+ * - The main virtualized history list (via a stable `data-virtuoso-scroller` attribute).
+ * - All panel content areas within the main view.
+ * - Nested scrollable elements like code blocks and tables.
+ */
+
+/* For Firefox */
+body .version-control-view.version-control-view .v-history-list,
+body .version-control-view.version-control-view .v-history-manual-scroll,
+body .version-control-view.version-control-view .v-history-list div[data-virtuoso-scroller="true"],
+body .version-control-view.version-control-view .v-settings-panel-content-wrapper,
+body .version-control-view.version-control-view .v-error-display .v-error-details,
+body .version-control-view.version-control-view .v-preview-panel-content,
+body .version-control-view.version-control-view .v-diff-panel-content,
+body .version-control-view.version-control-view .v-action-panel-list,
+body .version-control-view.version-control-view .v-inline-panel,
+body .version-control-view.version-control-view .v-version-content-preview,
+body .version-control-view.version-control-view .v-diff-content-wrapper,
+body .version-control-view.version-control-view .v-version-content-preview pre,
+body .version-control-view.version-control-view .v-version-content-preview .table-wrapper,
+body .version-control-view.version-control-view .v-dashboard-heatmap-wrapper {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* For WebKit browsers (Chrome, Safari, Electron) */
+body .version-control-view.version-control-view .v-history-list::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-history-manual-scroll::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-history-list div[data-virtuoso-scroller="true"]::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-settings-panel-content-wrapper::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-error-display .v-error-details::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-preview-panel-content::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-diff-panel-content::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-action-panel-list::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-inline-panel::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-version-content-preview::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-diff-content-wrapper::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-version-content-preview pre::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-version-content-preview .table-wrapper::-webkit-scrollbar,
+body .version-control-view.version-control-view .v-dashboard-heatmap-wrapper::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    -webkit-appearance: none !important;
+}
+
+/*
+ * TAP HIGHLIGHT COLOR REMOVAL (HIGH SPECIFICITY)
+ *
+ * This section uses highly specific selectors to disable the tap highlight color
+ * (a semi-transparent grey overlay on mobile/touch) for all interactive elements
+ * across all plugin UI components. The `body` prefix and repeated view class
+ * are used to create a specificity high enough to override any Obsidian theme styles.
+ */
+body .version-control-view.version-control-view button,
+body .version-control-view.version-control-view .clickable-icon,
+body .version-control-view.version-control-view .is-clickable,
+body .version-control-view.version-control-view [role="button"],
+body .version-control-view.version-control-view .v-history-entry {
+    -webkit-tap-highlight-color: transparent;
+}

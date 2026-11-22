@@ -1,0 +1,394 @@
+/* Version History */
+.v-history-list-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%; /* Ensure it fills its container for scrolling */
+}
+
+/* Disable interactions when a panel is active */
+.v-history-list-container.is-panel-active .v-history-list {
+    pointer-events: none;
+    opacity: 0.6;
+    transition: opacity 0.25s ease-in-out;
+}
+
+.v-history-header {
+    flex-shrink: 0;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    font-size: var(--font-ui-medium);
+    padding-bottom: var(--size-4-2);
+    padding-top: 0;
+    border-bottom: none;
+    padding-left: var(--size-4-2);
+    padding-right: var(--size-4-2);
+}
+
+.v-history-count {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    margin-left: auto;
+    font-weight: normal;
+}
+
+.v-history-list {
+    flex-grow: 1;
+    overflow: hidden; /* Changed from overflow-y: auto to prevent double scrollbars with Virtuoso */
+    min-height: 0;
+    position: relative;
+    padding-left: 0;
+    padding-right: 0;
+    height: 100%; /* Needed for Virtuoso */
+    padding-top: var(--size-4-2);
+}
+
+/* NEW: Scrollable container for manual content (e.g. loading skeletons) */
+.v-history-manual-scroll {
+    height: 100%;
+    overflow-y: auto;
+    padding-left: 0;
+    padding-right: 0;
+    /* Inherit padding-top behavior from container if needed, or handle internally */
+}
+
+/* Wrapper for card-view items */
+.v-history-item-card-wrapper {
+    padding-bottom: 8px;
+}
+
+/* NEW: Wrapper for list-view items to provide gap */
+.v-history-item-list-wrapper {
+    padding-bottom: 4px;
+}
+
+.v-history-entry {
+    display: flex;
+    flex-direction: column;
+    padding: var(--size-4-2);
+    border-radius: var(--radius-m);
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    box-sizing: border-box;
+
+    /* Hardware acceleration hint */
+    transform: translateZ(0);
+    will-change: transform, box-shadow, background-color, opacity;
+    /* Removed transform from transition to let framer-motion handle it exclusively */
+    transition: box-shadow 180ms ease-out, border-color 180ms ease-out, background-color 180ms ease-out;
+    
+    /* Entry animation - CSS based for reliability in Virtual Lists */
+    animation: v-entry-appear 0.2s ease-out forwards;
+}
+
+@keyframes v-entry-appear {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card view hover/active effects (lightweight shadows) */
+@media (hover: hover) and (pointer: fine) {
+    .v-history-entry:not(.is-list-view):hover {
+        border-color: var(--interactive-accent);
+        /* Transform handled by framer-motion whileHover */
+        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+        z-index: 10;
+    }
+}
+.v-history-entry:not(.is-list-view):active {
+    border-color: var(--interactive-accent);
+    /* Transform handled by framer-motion whileTap */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    z-index: 10;
+}
+
+/* List view hover/active effects */
+@media (hover: hover) and (pointer: fine) {
+    .v-history-entry.is-list-view:hover {
+        background-color: var(--background-modifier-hover);
+    }
+}
+.v-history-entry.is-list-view:active {
+    background-color: var(--background-modifier-active);
+    /* FIX: Add outline on active state for consistent click feedback */
+    box-shadow: 0 0 0 1.5px var(--interactive-accent);
+}
+
+.v-history-entry.is-highlighted {
+    box-shadow: 0 0 0 1.5px var(--interactive-accent);
+    transition: box-shadow 280ms ease-out;
+}
+
+/* NEW: Search highlighting styles */
+.v-history-entry mark {
+    background-color: var(--text-highlight-bg);
+    color: var(--text-normal);
+    border-radius: 2px;
+    padding: 0 2px;
+    box-shadow: 0 0 0 1px var(--text-highlight-bg);
+}
+
+.v-entry-header {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-3);
+    margin-bottom: var(--size-4-2);
+}
+.v-version-id {
+    font-weight: 600;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: var(--size-4-1) var(--size-4-2);
+    border-radius: var(--radius-s);
+    font-size: var(--font-ui-smaller);
+    flex-shrink: 0;
+}
+.v-version-name {
+    font-weight: 600;
+    font-size: var(--font-ui-small);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+    flex-grow: 1; /* Allow name to take up space */
+}
+.v-version-name.is-empty {
+    visibility: hidden;
+    flex-grow: 1;
+}
+.v-version-timestamp {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    margin-left: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.v-version-content {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-4-2);
+    align-items: center;
+}
+
+.v-entry-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--size-4-1);
+    margin-top: var(--size-4-2);
+    padding-top: var(--size-4-2);
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.v-entry-footer.v-is-hidden {
+    display: none;
+}
+
+/* NEW: Description styling in list/footer */
+.v-history-description {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted); /* Avoid pure black, use theme muted color */
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.4;
+    width: 100%;
+    margin-top: var(--size-4-1);
+}
+
+/* Adjust footer when showing description instead of buttons */
+.v-entry-footer .v-history-description {
+    margin-top: 0;
+    text-align: left;
+}
+
+.v-action-btn {
+    padding: var(--size-4-2);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-s);
+    transition: transform 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.v-action-btn:hover {
+    background-color: transparent;
+    color: var(--text-normal);
+}
+.v-action-btn:active {
+    transform: translateY(1px);
+}
+.v-action-btn.danger:hover {
+    background-color: transparent;
+    color: var(--text-error);
+}
+
+/* Dark mode override to ensure transparent background */
+.theme-dark .v-action-btn {
+    background-color: transparent;
+}
+.theme-dark .v-action-btn:hover {
+    background-color: transparent;
+}
+
+/* List View Mode */
+.v-history-entry.is-list-view {
+    flex-direction: column;
+    align-items: normal;
+    padding: var(--size-4-2);
+    cursor: pointer;
+}
+.is-list-view .v-entry-header {
+    flex-grow: 0;
+    margin-bottom: var(--size-4-1);
+    min-width: 0;
+    overflow: hidden;
+    flex-wrap: nowrap;
+    gap: var(--size-4-2);
+}
+.is-list-view .v-version-content {
+    display: flex;
+}
+.is-list-view .v-entry-footer {
+    display: none;
+}
+
+.v-entry-main-info {
+    display: flex;
+    align-items: center;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    gap: var(--size-4-3);
+}
+
+.v-history-entry.is-naming {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 1px var(--interactive-accent);
+    /* Transform handled by framer-motion */
+}
+
+.version-control-view .v-history-entry.is-naming input.v-version-name-input {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: auto;
+    line-height: 1.2;
+    flex-shrink: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: var(--font-ui-small);
+    color: var(--text-normal);
+    caret-color: var(--interactive-accent);
+    border-bottom: 1px solid transparent;
+    transition: border-color 160ms ease-in-out;
+}
+
+.version-control-view .v-history-entry.is-naming input.v-version-name-input:focus {
+    border-bottom-color: var(--interactive-accent);
+}
+
+.version-control-view .v-history-entry.is-naming input.v-version-name-input::placeholder {
+    color: var(--text-faint);
+    font-weight: normal;
+    font-style: italic;
+    opacity: 1;
+}
+
+/* NEW: Styles for description editor */
+.v-entry-description-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-2);
+    margin-top: var(--size-4-2);
+    padding-top: var(--size-4-2);
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.v-entry-description-editor textarea {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    box-shadow: none;
+    outline: none;
+    padding: var(--size-4-2);
+    margin: 0;
+    width: 100%;
+    min-height: calc(var(--line-height-normal) * 2 + var(--size-4-2) * 2);
+    resize: none;
+    font-family: inherit;
+    font-size: var(--font-ui-smaller);
+    color: var(--text-normal);
+    caret-color: var(--interactive-accent);
+    transition: border-color 160ms ease-in-out, box-shadow 160ms ease-in-out;
+    overflow-y: hidden; /* Hide scrollbar, height is managed by JS */
+}
+
+.v-entry-description-editor textarea:focus {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+.v-entry-description-editor textarea::placeholder {
+    color: var(--text-faint);
+    font-style: italic;
+}
+
+
+/* --- Skeleton Styles for History List --- */
+.v-history-list .v-history-entry.is-skeleton,
+.v-history-manual-scroll .v-history-entry.is-skeleton {
+    position: static;
+    transform: none;
+    animation: none; /* No entry animation for skeletons */
+}
+
+.v-history-entry.is-skeleton {
+    pointer-events: none;
+    background-color: var(--background-secondary);
+    border-color: transparent;
+    box-shadow: none;
+    /* Animation handled by framer-motion */
+}
+
+/* Card View Skeleton Layout */
+.v-history-entry.is-skeleton:not(.is-list-view) { height: 110px; }
+.v-history-entry.is-skeleton:not(.is-list-view) .v-version-id { width: 40px; height: 24px; }
+.v-history-entry.is-skeleton:not(.is-list-view) .v-version-name { width: 60%; height: 18px; }
+.v-history-entry.is-skeleton:not(.is-list-view) .v-version-timestamp { width: 80px; height: 16px; }
+.v-history-entry.is-skeleton:not(.is-list-view) .v-version-content { width: 80%; height: 16px; margin-top: var(--size-4-1); }
+
+/* List View Skeleton Layout */
+.v-history-entry.is-skeleton.is-list-view { height: 64px; }
+.v-history-entry.is-skeleton.is-list-view .v-version-id { width: 40px; height: 24px; flex-shrink: 0; }
+.v-history-entry.is-skeleton.is-list-view .v-entry-main-info { flex-basis: 0; flex-grow: 1; }
+.v-history-entry.is-skeleton.is-list-view .v-version-name { width: 70%; height: 18px; }
+.v-history-entry.is-skeleton.is-list-view .v-version-timestamp { width: 80px; height: 16px; flex-shrink: 0; }
+.v-history-entry.is-skeleton.is-list-view .v-version-content { width: 80%; height: 16px; margin-top: var(--size-4-1); }
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .v-history-entry,
+    .v-action-btn {
+        transition: none !important;
+        will-change: auto !important;
+        animation: none !important;
+    }
+}

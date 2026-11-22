@@ -1,0 +1,388 @@
+/* src/styles/timeline.css */
+
+/* Timeline Panel Layout */
+.v-inline-panel.v-timeline-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    /* Match history list background */
+    background-color: var(--background-primary);
+}
+
+.theme-dark .v-inline-panel.v-timeline-panel {
+    background-color: var(--background-secondary);
+}
+
+/* FULL SCREEN OVERRIDE */
+.v-panel-container.is-timeline-container {
+    padding: 0;
+    /* Ensure this matches the view background exactly */
+    background-color: var(--background-primary);
+    backdrop-filter: none;
+}
+
+.theme-dark .v-panel-container.is-timeline-container {
+    background-color: var(--background-secondary);
+}
+
+.v-panel-container.is-timeline-container .v-timeline-panel {
+    border-radius: 0;
+    box-shadow: none;
+    height: 100%;
+    width: 100%;
+    max-height: none;
+    animation: none;
+}
+
+.v-timeline-content {
+    flex-grow: 1;
+    overflow-y: hidden;
+    /* PADDING UPDATE: Top padding only. Side padding removed to match HistoryList. */
+    padding: var(--size-4-2) 0 0 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.v-timeline-loading,
+.v-timeline-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    gap: var(--size-4-2);
+}
+
+.v-timeline-list-container {
+    height: 100%;
+    width: 100%;
+}
+
+.v-timeline-item-wrapper {
+    padding-bottom: var(--size-4-2);
+    transform: translate3d(0, 0, 0);
+    will-change: transform, opacity;
+    /* PADDING UPDATE: Removed side padding. Cards will align with HistoryList items. */
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Timeline Card */
+.v-timeline-card {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m);
+    padding: var(--size-4-2);
+    overflow: hidden;
+    transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transform: translateZ(0); 
+    gap: var(--size-4-2);
+    /* MARGIN UPDATE: Removed side margins to match history list (edge-to-edge) */
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.v-timeline-card:hover {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+    z-index: 10;
+}
+
+.v-timeline-card.is-expanded {
+    border-color: var(--interactive-accent);
+    box-shadow: var(--shadow-m);
+}
+
+/* --- Card Header Layout --- */
+.v-timeline-card-header {
+    position: relative; 
+    min-height: auto;
+    display: block; 
+}
+
+.v-timeline-content-column {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4-2);
+}
+
+.v-timeline-header-row {
+    display: flex;
+    align-items: baseline;
+    width: 100%;
+}
+
+.v-timeline-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    flex-wrap: wrap;
+    max-width: 300px; 
+    opacity: 1;
+    transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.2s ease-out,
+                margin-right 0.3s ease;
+    margin-right: var(--size-4-2);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.v-timeline-header-left.is-collapsed {
+    max-width: 0;
+    opacity: 0;
+    margin-right: 0;
+}
+
+.v-timeline-spacer {
+    flex-grow: 1;
+    transition: flex-grow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 0;
+}
+
+.v-timeline-spacer.is-collapsed {
+    flex-grow: 0;
+}
+
+.v-timeline-version-badge {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-size: var(--font-ui-smaller);
+    font-weight: var(--font-bold);
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+
+.v-timeline-title {
+    font-weight: var(--font-semibold);
+    font-size: var(--font-ui-small);
+    color: var(--text-normal);
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.v-timeline-time {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: font-size 0.3s ease, color 0.3s ease;
+    transform-origin: left center;
+}
+
+.v-timeline-time.is-focused {
+    font-size: var(--font-ui-medium);
+    font-weight: var(--font-bold);
+    color: var(--text-normal);
+}
+
+.v-timeline-description {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    width: 100%;
+    margin-top: var(--size-4-1);
+    padding-top: var(--size-4-2);
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Diff Preview Footer */
+.v-timeline-diff-preview {
+    position: relative;
+    font-family: var(--font-monospace);
+    font-size: var(--font-ui-smaller);
+    /* COLOR UPDATE: Use muted text for the content to reduce glare */
+    color: var(--text-muted);
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: var(--size-4-2);
+    margin-top: var(--size-4-1);
+    overflow: hidden;
+    max-height: calc(1.5em * 3 + var(--size-4-2)); 
+}
+
+.v-timeline-diff-preview::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2em;
+    background: linear-gradient(to bottom, transparent, var(--background-secondary));
+    pointer-events: none;
+}
+
+.v-timeline-preview-line {
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    height: 1.5em;
+    display: flex;
+    align-items: center;
+}
+
+.v-timeline-preview-marker {
+    display: inline-block;
+    width: 1.5em;
+    text-align: center;
+    opacity: 0.8;
+    flex-shrink: 0;
+    user-select: none;
+    font-weight: bold;
+}
+
+.v-timeline-preview-text {
+    white-space: pre;
+    /* Ensure text color is muted */
+    color: var(--text-muted);
+}
+
+/* COLOR UPDATE: Only color the markers, not the text */
+.v-preview-add .v-timeline-preview-marker { color: var(--text-success); }
+.v-preview-remove .v-timeline-preview-marker { color: var(--text-error); }
+
+.v-timeline-stats-row {
+    display: flex;
+    align-items: center;
+}
+
+.v-timeline-stats {
+    display: flex;
+    gap: var(--size-4-3);
+    font-size: var(--font-ui-smaller);
+    font-family: var(--font-monospace);
+}
+
+.v-stat-add { color: var(--color-green); }
+.v-stat-del { color: var(--color-red); }
+
+/* --- Expansion Animation --- */
+.v-timeline-card-diff-container {
+    overflow: hidden;
+    border-top: 1px solid transparent;
+}
+
+.v-timeline-card.is-expanded .v-timeline-card-diff-container {
+    border-top-color: var(--background-modifier-border);
+}
+
+.v-timeline-diff-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.v-timeline-diff-content {
+    background-color: var(--background-primary);
+    height: 400px; 
+    display: flex;
+    flex-direction: column;
+    cursor: default; 
+    border-radius: var(--radius-s);
+    margin-top: var(--size-4-2);
+}
+
+.v-timeline-diff-content .v-virtuoso-container {
+    height: 100%;
+}
+
+/* --- Header Layout --- */
+.v-timeline-header-container {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--background-modifier-border);
+    flex-shrink: 0;
+}
+
+.v-timeline-toolbar {
+    position: relative;
+    height: var(--input-height);
+    padding: var(--size-4-2);
+    display: flex;
+    align-items: center;
+}
+
+.v-timeline-toolbar-content {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: opacity 0.2s ease-in-out;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.v-timeline-toolbar.is-searching .v-timeline-toolbar-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.v-timeline-toolbar .v-search-bar-container {
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+    position: absolute;
+    width: calc(100% - var(--size-4-2) * 2);
+    top: 50%;
+    left: var(--size-4-2);
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    transition: opacity 0.2s ease-in-out;
+}
+
+.v-timeline-toolbar.is-searching .v-search-bar-container {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.v-timeline-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+}
+
+.v-timeline-header-title-row {
+    padding: 0 var(--size-4-3) var(--size-4-3) var(--size-4-3);
+}
+
+.v-timeline-header-title-row h3 {
+    margin: 0;
+    font-size: var(--font-ui-medium);
+    font-weight: var(--font-semibold);
+}
+
+/* --- Scrollbar Hiding Protocol --- */
+.v-panel-container.is-timeline-container .v-timeline-panel .v-timeline-list-container .v-virtuoso-container::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+.v-panel-container.is-timeline-container .v-timeline-panel .v-timeline-list-container .v-virtuoso-container {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.v-panel-container.is-timeline-container .v-timeline-panel .v-timeline-card .v-timeline-diff-content .v-virtuoso-container::-webkit-scrollbar,
+.v-panel-container.is-timeline-container .v-timeline-panel .v-timeline-card .v-timeline-diff-content .v-diff-content-wrapper::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+.v-panel-container.is-timeline-container .v-timeline-panel .v-timeline-card .v-timeline-diff-content .v-virtuoso-container,
+.v-panel-container.is-timeline-container .v-timeline-panel .v-timeline-card .v-timeline-diff-content .v-diff-content-wrapper {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}

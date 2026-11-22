@@ -1,0 +1,9 @@
+@import url("./styles/base.css");
+@import url("./styles/components.css");
+@import url("./styles/actionbar.css");
+@import url("./styles/settings.css");
+@import url("./styles/historylist.css");
+@import url("./styles/panels.css");
+@import url("./styles/diff.css");
+@import url("./styles/diff-window.css");
+@import url("./styles/timeline.css");

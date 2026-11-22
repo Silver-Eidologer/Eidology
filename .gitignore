@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+
+# Obsidian-specific
+.obsidian/
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+assets/main.js
+assets/main.css
+assets/styles.css
