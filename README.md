@@ -4,6 +4,8 @@ Per-note version control for [Obsidian](https://obsidian.md).
 
 Each tracked note has its own history and its own branches, stored locally in the vault. I use it to keep named milestones of a document, to try a different direction without duplicating the file, to see what changed, and to recover earlier text, including the text of a note I have since deleted. It is not a Git client and it is not a backup. It sits beside both.
 
+Eidology is a personal adaptation for my own needs, so it is not meant to be a releasable product, and I will not maintain any effort of publishing it. This is also why I changed names and IDs.
+
 ## Origin
 
 Eidology is my continuation of [Version Control](https://github.com/Yuichi-Aragi/Version-Control) by Yuichi-Aragi (MIT), which its author archived in May 2026. The per-note model, the sidebar and the diff tooling come from that project. The storage, recovery and settings layers are maintained here under their own plugin id, `eidology`. Data written by the original plugin is not read.
