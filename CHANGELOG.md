@@ -65,14 +65,14 @@ Fork of Version Control 1.9.44 (Yuichi-Aragi, MIT) under the identity Eidology. 
 - Type error in `persistence-service.ts` (`parseInt` over a possibly undefined regex group).
 
 ### Not verified
-- The Save button of the exclusion lists has been type-checked and built but not run inside Obsidian. The tests cover the validator and its agreement with the path filter, not the component. The regression test for the freeze detects a return of the old check as a hang, not as a failed assertion, because the backtracking is synchronous.
-- The folder-deletion fix and the removal of the deviation function have been type-checked, built and tested against an in-memory file system, but not run inside Obsidian. The regression test fails without the fix. The sharing of runs in `handleFileDelete` is not covered by any test.
-- The trash has been type-checked, built and tested against an in-memory file system, but not run inside Obsidian.
-- The automatic first edit has been type-checked and built but not run inside Obsidian.
-- The save dialog has been type-checked and built but not run inside Obsidian. Only the function that decides which fields it shows is covered by a test.
-- The typed-array copies in edit-history import/export could not be shown to matter: with fflate 0.8.2 under Node, the outputs of `zip` and `unzip` already own exact-size buffers, and `tests/edit-history-export-import.test.ts` passes with and without the copy. The copies remain as a defensive measure. They are not a confirmed cause of any upstream issue.
-- The buffer fixes are a plausible cause of upstream issues #43, #44 and #50; none of these issues was reproduced.
-- `preventScroll` is the probable remedy for upstream issue #51; not reproduced.
+- ~The Save button of the exclusion lists has been type-checked and built but not run inside Obsidian. The tests cover the validator and its agreement with the path filter, not the component. The regression test for the freeze detects a return of the old check as a hang, not as a failed assertion, because the backtracking is synchronous~. >>> Verified working.
+- ~The folder-deletion fix and the removal of the deviation function have been type-checked, built and tested against an in-memory file system, but not run inside Obsidian. The regression test fails without the fix. The sharing of runs in `handleFileDelete` is not covered by any test~. >>> Verified working.
+- ~The trash has been type-checked, built and tested against an in-memory file system, but not run inside Obsidian~. >>> (Obsidian trash) Verified working.
+- ~The automatic first edit has been type-checked and built but not run inside Obsidian. >>> Verified working~.
+- ~The save dialog has been type-checked and built but not run inside Obsidian. Only the function that decides which fields it shows is covered by a test~. >>> Verified working.
+- ~The typed-array copies in edit-history import/export could not be shown to matter: with fflate 0.8.2 under Node, the outputs of `zip` and `unzip` already own exact-size buffers, and `tests/edit-history-export-import.test.ts` passes with and without the copy. The copies remain as a defensive measure. They are not a confirmed cause of any upstream issue~. >>> No upstream issue detected.
+- ~The buffer fixes are a plausible cause of upstream issues #43, #44 and #50; none of these issues was reproduced~. >>> Tested in real, operational vaults.
+- ~`preventScroll` is the probable remedy for upstream issue #51; not reproduced~. >>> Tested in real, operational vaults.
 
 ***
 
