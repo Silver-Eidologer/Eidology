@@ -1,5 +1,6 @@
 import { wrap, releaseProxy, transfer, type Remote } from 'comlink';
 import type { WorkerHealthStats, WorkerExecutionOptions } from './types';
+import { startupMark } from '@/utils/startup-timing';
 
 /**
  * Configuration options for WorkerManager initialization.
@@ -227,10 +228,13 @@ export class WorkerManager<TApi = unknown> {
         this.initPromise = (async () => {
             this.isInitializing = true;
             try {
+                startupMark(`${this.workerName}: creating worker`);
                 this.createWorker();
+                startupMark(`${this.workerName}: worker created, handshake pending`);
                 
                 if (this.validateOnInit && this.workerProxy) {
                     await this.validateWorker();
+                    startupMark(`${this.workerName}: handshake done`);
                 }
             } catch (error) {
                 // Clean up on failure

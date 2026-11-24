@@ -23,6 +23,7 @@ import { ExportManager } from '@/services/export-manager';
 import { TrashService } from '@/core/trash-service';
 import { DiffManager } from '@/services/diff-manager/DiffManager';
 import { UIService } from '@/services/ui-service';
+import { startupMark } from '@/utils/startup-timing';
 
 /**
  * Service registry that provides access to all singleton services.
@@ -262,6 +263,7 @@ export class ServiceRegistry {
         // 1. Compression Worker (Highest Priority - used by other services)
         try {
             if (this.compressionManager) {
+                startupMark('worker init: compression requested');
                 this.compressionManager.initialize();
             }
         } catch (e) {
@@ -274,6 +276,7 @@ export class ServiceRegistry {
         // 2. Edit History Worker (High Priority - data integrity)
         try {
             if (this.editHistoryManager) {
+                startupMark('worker init: edit history requested');
                 this.editHistoryManager.initialize();
             }
         } catch (e) {
@@ -286,6 +289,7 @@ export class ServiceRegistry {
         // 3. Timeline Worker (UI Priority)
         try {
             if (this.timelineManager) {
+                startupMark('worker init: timeline requested');
                 this.timelineManager.initialize();
             }
         } catch (e) {

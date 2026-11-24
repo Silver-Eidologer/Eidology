@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from '@/constants';
 import type { VersionControlSettings, NoteEntry } from '@/types';
 import { CentralManifestSchema, VersionControlSettingsSchema } from '@/schemas';
 import type VersionControlPlugin from '@/main/VersionControlPlugin';
+import { startupMark } from '@/utils/startup-timing';
 
 /**
  * Handles settings initialization, migration, and persistence.
@@ -17,6 +18,7 @@ export class SettingsInitializer {
     async loadSettings(): Promise<void> {
         try {
             const loadedData: any = await this.plugin.loadData() || {};
+            startupMark('settings: data.json read');
             let settingsData: Partial<VersionControlSettings>;
 
             // --- Migration Logic: Flat to Nested Structure ---
@@ -68,7 +70,9 @@ export class SettingsInitializer {
             };
 
             this.plugin.settings = v.parse(VersionControlSettingsSchema, mergedSettings);
+            startupMark('settings: merged and validated');
             await this.saveSettings();
+            startupMark('settings: data.json written');
         } catch (error) {
             console.error("Eidology: Failed to load and validate settings", error);
             await this.backupStoredData('loading failed');

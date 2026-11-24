@@ -4,6 +4,7 @@ import { SettingsInitializer, ServiceRegistryInitializer, UIInitializer } from '
 import { EventRegistrar } from '@/main/events';
 import type VersionControlPlugin from '@/main/VersionControlPlugin';
 import { createAppStore } from '@/state';
+import { startupMark, startupReport } from '@/utils/startup-timing';
 
 /**
  * Handles plugin loading lifecycle.
@@ -22,12 +23,14 @@ export class PluginLoader {
         }
 
         this.plugin.isUnloading = false; // Reset the guard flag on every load
+        startupMark('onload: start');
 
         try {
             // 1. Load settings with enhanced error handling
             const settingsInitializer = new SettingsInitializer(this.plugin);
             await settingsInitializer.loadSettings();
             
+            startupMark('settings: loaded');
             if (this.plugin.isUnloading) return;
 
             // 2. Initialize service registry (without store for now)
@@ -36,6 +39,7 @@ export class PluginLoader {
 
             // Store reference to service registry
             this.plugin.services = services;
+            startupMark('services: constructed');
 
             // 3. Create store with properly loaded settings
             const initialState = getInitialState(this.plugin.settings);
@@ -43,6 +47,7 @@ export class PluginLoader {
 
             // 4. Finalize initialization (update services that depend on store)
             services.finalizeInitialization();
+            startupMark('store created, services finalized');
 
             // Store references to frequently used services
             this.plugin.store = services.store;
@@ -52,6 +57,7 @@ export class PluginLoader {
             // 5. Initialize UI components
             const uiInitializer = new UIInitializer(this.plugin, services.store);
             uiInitializer.registerUIComponents();
+            startupMark('UI registered (tab, view, ribbon, commands)');
 
             // 6. Initialize core managers (Non-worker dependent)
             try {
@@ -68,14 +74,17 @@ export class PluginLoader {
 
             // 7. Initialize database (Manifests only)
             await registryInitializer.initializeDatabase(services);
+            startupMark('central manifest loaded');
 
             // 8. Set up event listeners
             const eventRegistrar = new EventRegistrar(this.plugin, services.store, services.eventBus);
             eventRegistrar.setupEventListeners();
+            startupMark('event listeners registered');
 
             // 9. Initialize view and workers when layout is ready
             // We use onLayoutReady without a timeout to ensure Obsidian is fully initialized.
             this.plugin.app.workspace.onLayoutReady(() => {
+                startupMark('layout ready');
                 if (this.plugin.isUnloading) return;
 
                 // PERF: Use requestIdleCallback to defer heavy initialization.
@@ -85,6 +94,7 @@ export class PluginLoader {
                 const defer = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
                 
                 defer(async () => {
+                    startupMark('deferred work: start (idle callback)');
                     if (this.plugin.isUnloading) return;
                     
                     // Initialize workers sequentially to prevent UI freeze
@@ -96,6 +106,7 @@ export class PluginLoader {
                         // We continue, as some features might still work
                     }
 
+                    startupMark('workers: initializeWorkers returned');
                     if (this.plugin.isUnloading) return;
 
                     // Attempt to initialize view, but don't crash if it fails
@@ -107,15 +118,20 @@ export class PluginLoader {
 
                     // Delete the trash entries that passed their retention period
                     try {
+                        startupMark('trash purge: start');
                         const purged = await services.trashService.purgeExpired();
+                        startupMark('trash purge: done');
                         if (purged > 0) console.log(`Eidology: ${purged} expired trash entries deleted.`);
                     } catch (e) {
                         console.warn('Eidology: Could not delete expired trash entries.', e);
                     }
+                    startupReport('deferred work finished');
                 }, { timeout: 2000 }); // Force execution within 2s
             });
 
             this.plugin.setInitialized(true);
+            startupMark('onload: end');
+            startupReport('onload finished');
 
         } catch (error) {
             console.error("Version Control: CRITICAL: Plugin failed to load.", error);

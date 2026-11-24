@@ -4,6 +4,7 @@ import { thunks } from '@/state';
 import { registerViews, addRibbonIcon, registerCommands } from '@/setup';
 import { VersionControlSettingTab } from '@/ui/settings-tab';
 import type VersionControlPlugin from '@/main/VersionControlPlugin';
+import { startupMark } from '@/utils/startup-timing';
 
 /**
  * Handles UI component registration and initialization.
@@ -40,7 +41,9 @@ export class UIInitializer {
         try {
             // This thunk will now load the correct settings for the active note (or defaults)
             // by using the recommended API to find the active view.
-            this.store.dispatch(thunks.initializeView());
+            startupMark('view init: dispatched');
+            Promise.resolve(this.store.dispatch(thunks.initializeView()))
+                .finally(() => startupMark('view init: thunk settled'));
         } catch (error) {
             console.error("Version Control: View initialization failed", error);
             new Notice("Failed to initialize view. Please check the console for details.");
