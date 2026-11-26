@@ -7,10 +7,17 @@ import type { ThunkConfig } from '@/state/store';
 import type { VersionHistoryEntry } from '@/types';
 import { historyApi } from '@/state/apis/history.api';
 import { validateReadyState, validateFileExists } from '@/state/utils/thunk-validation';
+import { isShownInView, pickBranchName } from '@/state/utils/auto-save-target';
 
 export interface SaveEditOptions {
     isAuto?: boolean;
     allowInit?: boolean;
+    /**
+     * Path of the file to save. When set, the save does not depend on the sidebar view: the file,
+     * its note ID and its branch are resolved from the path, and the view state is updated only
+     * if the view shows this file. Used by automatic saves.
+     */
+    filePath?: string;
 }
 
 /**
@@ -30,7 +37,8 @@ export const saveNewEdit = createAsyncThunk<
             ? { isAuto: arg, allowInit: !arg } 
             : (arg || { isAuto: false, allowInit: true });
         
-        const { isAuto = false, allowInit = !isAuto } = options;
+        const { isAuto = false, allowInit = !isAuto, filePath } = options;
+        const direct = filePath !== undefined;
 
         const state = getState().app;
         const uiService = services.uiService;
@@ -41,31 +49,54 @@ export const saveNewEdit = createAsyncThunk<
         const backgroundTaskManager = services.backgroundTaskManager;
         const eventBus = services.eventBus;
 
-        if (!validateReadyState(state, uiService, isAuto)) {
-             return rejectWithValue('Not ready');
-        }
+        let file: TFile;
+        let knownNoteId: string | null;
+        if (direct) {
+            const found = app.vault.getAbstractFileByPath(filePath);
+            if (!(found instanceof TFile)) {
+                console.warn(`Eidology: An automatic edit was skipped because "${filePath}" no longer exists.`);
+                return rejectWithValue('Aborted');
+            }
+            file = found;
+            knownNoteId = (await noteManager.getNoteId(found)) ?? (await manifestManager.getNoteIdByPath(found.path));
 
-        const file = state.file;
-        if (!validateFileExists(file, uiService, isAuto)) {
-            return rejectWithValue('No file');
-        }
-
-        if (isAuto && !allowInit) {
-            if (!state.noteId) {
-                return null;
+            if (isAuto && !allowInit) {
+                if (!knownNoteId) return null;
+                if (!(await editHistoryManager.getEditManifest(knownNoteId))) return null;
+            }
+        } else {
+            if (!validateReadyState(state, uiService, isAuto)) {
+                // An automatic save that cannot run must not put the view into the error state.
+                return rejectWithValue(isAuto ? 'Aborted' : 'Not ready');
             }
 
-            const manifest = await editHistoryManager.getEditManifest(state.noteId);
-            if (!manifest) {
-                return null;
+            const stateFile = state.file;
+            if (!validateFileExists(stateFile, uiService, isAuto)) {
+                return rejectWithValue(isAuto ? 'Aborted' : 'No file');
+            }
+            file = stateFile;
+            knownNoteId = state.noteId;
+
+            if (isAuto && !allowInit) {
+                if (!state.noteId) {
+                    return null;
+                }
+
+                const manifest = await editHistoryManager.getEditManifest(state.noteId);
+                if (!manifest) {
+                    return null;
+                }
             }
         }
+
+        // The view state is updated only when the view shows the saved file.
+        const shownInView = isShownInView(state.file?.path, direct ? file.path : undefined);
 
         try {
             const liveFile = app.vault.getAbstractFileByPath(file.path);
             if (!(liveFile instanceof TFile)) throw new Error('File not found');
 
-            let noteId = state.noteId;
+            let noteId = knownNoteId;
 
             if (!noteId) {
                 noteId = await noteManager.getOrCreateNoteId(liveFile);
@@ -79,14 +110,19 @@ export const saveNewEdit = createAsyncThunk<
                     );
                 }
 
-                dispatch(appSlice.actions.updateNoteIdInState({ noteId }));
+                if (shownInView) {
+                    dispatch(appSlice.actions.updateNoteIdInState({ noteId }));
+                }
                 dispatch(historyApi.util.invalidateTags([{ type: 'EditHistory', id: noteId }]));
             }
 
             const content = await app.vault.adapter.read(liveFile.path);
             const settings = await resolveSettings(noteId, 'edit', services);
             const maxVersions = settings.maxVersionsPerNote;
-            const currentBranch = state.currentBranch || 'main';
+            // Without the view the branch is not in the state yet; the note manifest is the source of truth.
+            const currentBranch = direct
+                ? pickBranchName((await manifestManager.loadNoteManifest(noteId))?.currentBranch)
+                : state.currentBranch || 'main';
 
             const result = await editHistoryManager.createEdit(
                 noteId,
@@ -96,7 +132,7 @@ export const saveNewEdit = createAsyncThunk<
                 maxVersions
             );
 
-            if (shouldAbort(services, getState, { noteId })) return rejectWithValue('Context changed');
+            if (shouldAbort(services, getState, direct ? undefined : { noteId })) return rejectWithValue('Context changed');
 
             if (result) {
                 const { entry: newEditEntry, deletedIds } = result;

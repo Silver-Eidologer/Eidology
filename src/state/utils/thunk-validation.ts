@@ -2,6 +2,9 @@ import type { AppState } from '@/state';
 import { AppStatus } from '@/state';
 import type { TFile } from 'obsidian';
 import type { UIService } from '@/services';
+import { createSkipWarningTracker } from '@/state/utils/auto-save-target';
+
+const skippedAutoSaveWarnings = createSkipWarningTracker();
 
 /**
  * Validation utilities for thunks.
@@ -21,17 +24,24 @@ export function validateReadyState(
     uiService: UIService,
     isAuto: boolean = false
 ): boolean {
-    if (state.status !== AppStatus.READY) {
-        if (!isAuto) {
-            console.warn(
-                "Eidology: Manual save attempt while not in Ready state. Aborting.",
-                state.status
-            );
-            uiService.showNotice("Eidology: Cannot save version, the view is not ready.", 3000);
-        }
-        return false;
+    if (state.status === AppStatus.READY) {
+        skippedAutoSaveWarnings.reset();
+        return true;
     }
-    return true;
+
+    if (isAuto) {
+        // Automatic saves are silent for the user, but the reason is logged once per episode.
+        if (skippedAutoSaveWarnings.shouldWarn(state.status)) {
+            console.warn(`Eidology: An automatic save was skipped because the view state is "${state.status}", not READY.`);
+        }
+    } else {
+        console.warn(
+            "Eidology: Manual save attempt while not in Ready state. Aborting.",
+            state.status
+        );
+        uiService.showNotice("Eidology: Cannot save version, the view is not ready.", 3000);
+    }
+    return false;
 }
 
 /**

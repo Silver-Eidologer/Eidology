@@ -281,7 +281,7 @@ export const handleVaultSave = (file: TFile): AppThunk => async (dispatch, _getS
                     // tracks this path. Otherwise only notes that already have edits are saved.
                     const allowInit = editSettings.autoRegisterNotes
                         && isPathAllowed(f.path, { pathFilters: editSettings.pathFilters });
-                    dispatch(saveNewEdit({ isAuto: true, allowInit }));
+                    dispatch(saveNewEdit({ isAuto: true, allowInit, filePath: f.path }));
                 }
             },
             intervalMs

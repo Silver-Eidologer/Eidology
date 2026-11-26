@@ -11,6 +11,14 @@ import { historyApi } from '@/state/apis/history.api';
  * Manages periodic background tasks for the plugin, specifically watch mode auto-saving.
  * Leverages RTK Query for data access to ensure consistency with the UI and single source of truth.
  */
+/**
+ * Watch mode runs for a note that is loaded (LOADING) or ready (READY). LOADING is accepted because
+ * only the mounted sidebar view promotes the state to READY, and saves name their file explicitly.
+ */
+function isWatchableStatus(status: AppStatus): boolean {
+  return status === AppStatus.READY || status === AppStatus.LOADING;
+}
+
 export class BackgroundTaskManager extends Component {
   private timerId: number | null = null;
   
@@ -48,7 +56,7 @@ export class BackgroundTaskManager extends Component {
     const currentNoteId = state.noteId;
 
     // If we are not in a valid state to watch, stop everything.
-    if (!currentNoteId || state.status !== AppStatus.READY) {
+    if (!currentNoteId || !isWatchableStatus(state.status)) {
       this.stopTimer();
       this.activeNoteId = null;
       this.store.dispatch(appSlice.actions.setWatchModeCountdown(null));
@@ -134,7 +142,7 @@ export class BackgroundTaskManager extends Component {
     const state = this.store.getState().app;
     
     // Safety check: if context changed underneath us, stop.
-    if (state.noteId !== this.activeNoteId || state.status !== AppStatus.READY) {
+    if (state.noteId !== this.activeNoteId || !isWatchableStatus(state.status)) {
       this.stopTimer();
       return;
     }
@@ -168,18 +176,24 @@ export class BackgroundTaskManager extends Component {
     }
   }
 
+  /** Names the active file, so a watch-mode save does not depend on the sidebar view being mounted. */
+  private activeFilePathOption(): { filePath?: string } {
+    const path = this.store.getState().app.file?.path;
+    return path ? { filePath: path } : {};
+  }
+
   private async triggerVersionSave() {
     if (!this.activeNoteId) return;
     const settings = await this.resolveSettings(this.activeNoteId, 'version');
     const hybridSettings = { ...this.plugin.settings, ...settings };
     // Note: isAuto=true implies allowInit=false by default, preventing auto-creation of new history
-    this.store.dispatch(thunks.saveNewVersion({ isAuto: true, settings: hybridSettings }));
+    this.store.dispatch(thunks.saveNewVersion({ isAuto: true, settings: hybridSettings, ...this.activeFilePathOption() }));
   }
 
   private async triggerEditSave() {
     if (!this.activeNoteId) return;
     // Note: isAuto=true, allowInit=false prevents auto-creation of new history
-    this.store.dispatch(thunks.saveNewEdit({ isAuto: true, allowInit: false }));
+    this.store.dispatch(thunks.saveNewEdit({ isAuto: true, allowInit: false, ...this.activeFilePathOption() }));
   }
 
   private async resolveSettings(noteId: string, type: 'version' | 'edit'): Promise<HistorySettings> {

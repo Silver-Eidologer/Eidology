@@ -13,6 +13,7 @@ export const SaveVersionOptionsSchema = v.object({
     force: v.optional(v.boolean()),
     isAuto: v.optional(v.boolean()),
     detailsPrompted: v.optional(v.boolean()),
+    filePath: v.optional(v.string()),
     settings: v.optional(VersionControlSettingsSchema),
 });
 

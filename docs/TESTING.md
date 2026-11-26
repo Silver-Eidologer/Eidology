@@ -21,6 +21,7 @@ Runs Vitest on `tests/**/*.test.ts` in Node. No network access is needed, and th
 | `tests/trash-service.test.ts` | `TrashService` over an in-memory file system: order of the steps when trashing, two overlapping moves of the same note, refusal to replace an entry that has a manifest, listing, restore (path conflict, branch names, empty history, rollback on failure), purge, empty, expiry |
 | `tests/startup-timing.test.ts` | Formatting of the start-up timing report (`formatStartupReport`) |
 | `tests/form-validator.test.ts` | Exclusion pattern list (`RegexListSchema`): accepted and rejected lines, line numbers in messages, speed on long lines and many lines, agreement with the path filter (`compileRegex`), exclusion with several alternatives |
+| `tests/auto-save-target.test.ts` | Pure rules of automatic saves without the view: whether the view shows the saved file, branch choice, once-per-episode warning |
 | `tests/detail-prompts.test.ts` | Which fields the save dialog asks for, by view mode and settings |
 | `tests/edit-history-export-import.test.ts` | Export of a branch to a zip and import back: every edit returns with its own content; the archive starts with the zip signature; an empty archive is rejected |
 

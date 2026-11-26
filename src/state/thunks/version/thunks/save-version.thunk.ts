@@ -40,7 +40,9 @@ export const saveNewVersion = createAsyncThunk<
             return rejectWithValue('Invalid options');
         }
 
-        const { isAuto = false, allowInit = !isAuto, settings } = options;
+        const { isAuto = false, allowInit = !isAuto, settings, filePath } = options;
+        // With a file path the save does not depend on the sidebar view (see SaveVersionOptions.filePath).
+        const direct = filePath !== undefined;
         const uiService = services.uiService;
         const initialState = getState().app;
 
@@ -50,40 +52,63 @@ export const saveNewVersion = createAsyncThunk<
 
         const versionManager = services.versionManager;
         const manifestManager = services.manifestManager;
+        const noteManager = services.noteManager;
         const app = services.app;
         const backgroundTaskManager = services.backgroundTaskManager;
 
-        if (!validateReadyState(initialState, uiService, isAuto)) {
-            return rejectWithValue('Not ready');
-        }
+        let targetFile: TFile;
+        if (direct) {
+            const found = app.vault.getAbstractFileByPath(filePath);
+            if (!(found instanceof TFile)) {
+                console.warn(`Eidology: An automatic save was skipped because "${filePath}" no longer exists.`);
+                return rejectWithValue('Aborted');
+            }
+            targetFile = found;
 
-        const initialFileFromState = initialState.file;
-        if (!validateFileExists(initialFileFromState, uiService, isAuto)) {
-            return rejectWithValue('No file');
-        }
-
-        // AUTHORITY CHECK: Prevent auto-saves from initializing history
-        // If allowInit is true (e.g. manual save or autoRegisterNote), we skip this check
-        // and proceed to create ID and manifest if missing.
-        if (isAuto && !allowInit) {
-            // Case 1: Note is completely untracked (no ID in state)
-            if (!initialState.noteId) {
-                return null;
+            if (isAuto && !allowInit) {
+                const noteId = (await noteManager.getNoteId(found)) ?? (await manifestManager.getNoteIdByPath(found.path));
+                // An untracked note, or one without history, is never initialized by an automatic save.
+                if (!noteId || !(await manifestManager.loadNoteManifest(noteId))) return null;
+            }
+        } else {
+            if (!validateReadyState(initialState, uiService, isAuto)) {
+                // An automatic save that cannot run must not put the view into the error state.
+                return rejectWithValue(isAuto ? 'Aborted' : 'Not ready');
             }
 
-            // Case 2: Note has ID, but might not have a manifest (orphaned ID or just generated)
-            const manifest = await manifestManager.loadNoteManifest(initialState.noteId);
-            if (!manifest) {
-                // No history exists, and this is an auto-save without init authority. Abort.
-                return null;
+            const initialFileFromState = initialState.file;
+            if (!validateFileExists(initialFileFromState, uiService, isAuto)) {
+                return rejectWithValue(isAuto ? 'Aborted' : 'No file');
+            }
+            targetFile = initialFileFromState;
+
+            // AUTHORITY CHECK: Prevent auto-saves from initializing history
+            // If allowInit is true (e.g. manual save or autoRegisterNote), we skip this check
+            // and proceed to create ID and manifest if missing.
+            if (isAuto && !allowInit) {
+                // Case 1: Note is completely untracked (no ID in state)
+                if (!initialState.noteId) {
+                    return null;
+                }
+
+                // Case 2: Note has ID, but might not have a manifest (orphaned ID or just generated)
+                const manifest = await manifestManager.loadNoteManifest(initialState.noteId);
+                if (!manifest) {
+                    // No history exists, and this is an auto-save without init authority. Abort.
+                    return null;
+                }
             }
         }
 
         try {
-            const liveFile = app.vault.getAbstractFileByPath(initialFileFromState.path);
+            const liveFile = app.vault.getAbstractFileByPath(targetFile.path);
             if (!(liveFile instanceof TFile)) {
+                if (direct) {
+                    console.warn(`Eidology: An automatic save was skipped because "${targetFile.path}" no longer exists.`);
+                    return rejectWithValue('Aborted');
+                }
                 uiService.showNotice(
-                    `Eidology: Cannot save because the note "${initialFileFromState.basename}" may have been moved or deleted.`
+                    `Eidology: Cannot save because the note "${targetFile.basename}" may have been moved or deleted.`
                 );
                 dispatch(initializeView(undefined));
                 return rejectWithValue('File not found');
@@ -113,7 +138,8 @@ export const saveNewVersion = createAsyncThunk<
                 backgroundTaskManager.resetTimer('version');
             }
 
-            if (shouldAbort(services, getState, { filePath: initialFileFromState.path, status: AppStatus.READY })) {
+            // A save that names its file does not depend on the view, so a change of the view is not a reason to discard it.
+            if (!direct && shouldAbort(services, getState, { filePath: targetFile.path, status: AppStatus.READY })) {
                 if (result.status === 'saved') {
                     notifyVersionSavedInBackground(uiService, result.displayName, liveFile);
                     // Even if context changed, we should invalidate tags for the noteId involved
@@ -154,7 +180,7 @@ export const saveNewVersion = createAsyncThunk<
 
         } catch (error) {
             handleVersionError(error, 'saveNewVersion', uiService, isAuto);
-            dispatch(initializeView(undefined));
+            if (!direct) dispatch(initializeView(undefined));
             return rejectWithValue(error instanceof Error ? error.message : String(error));
         } finally {
             if (!shouldAbort(services, getState)) {

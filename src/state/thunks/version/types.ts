@@ -30,6 +30,13 @@ export interface SaveVersionOptions {
     detailsPrompted?: boolean;
 
     /**
+     * Path of the file to save. When set, the save does not depend on the sidebar view:
+     * the file, its note ID and its settings are resolved from the path, and the view state
+     * is updated only if the view shows this file. Used by automatic saves.
+     */
+    filePath?: string;
+
+    /**
      * Whether this save is allowed to initialize tracking for a note that has no history.
      * Defaults to false if isAuto is true, and true if isAuto is false.
      */

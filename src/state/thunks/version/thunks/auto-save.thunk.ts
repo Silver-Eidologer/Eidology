@@ -39,11 +39,13 @@ export const performAutoSave = (file: TFile): AppThunk => async (dispatch, getSt
         ...historySettings,
     };
 
-    // Note: isAuto=true implies allowInit=false, preventing creation of history if it doesn't exist
+    // Note: isAuto=true implies allowInit=false, preventing creation of history if it doesn't exist.
+    // The file is named explicitly, so the save works whether or not the sidebar view is mounted.
     const resultAction = await dispatch(saveNewVersion({
         name: 'Auto-save',
         force: false,
         isAuto: true,
+        filePath: file.path,
         settings: hybridSettings,
     }));
 

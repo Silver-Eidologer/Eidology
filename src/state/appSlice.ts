@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS } from '@/constants';
 import { loadEffectiveSettingsForNote } from './thunks/core.thunks';
 import { saveNewVersion } from './thunks/version/thunks/save-version.thunk';
 import { saveNewEdit } from './thunks/edit-history/thunks/save-edit.thunk';
+import { isShownInView } from './utils/auto-save-target';
 
 const initialState: AppState = getInitialState(DEFAULT_SETTINGS);
 
@@ -315,6 +316,8 @@ export const appSlice = createSlice({
 
         builder.addCase(saveNewVersion.fulfilled, (state, action) => {
             state.isProcessing = false;
+            // A save of a file that the view does not show must not change the view state.
+            if (!isShownInView(state.file?.path, action.meta.arg?.filePath)) return;
             if (action.payload && action.payload.newVersionEntry) {
                 if (action.payload.newNoteId && state.noteId !== action.payload.newNoteId) {
                     state.noteId = action.payload.newNoteId;
@@ -330,6 +333,8 @@ export const appSlice = createSlice({
 
         builder.addCase(saveNewEdit.fulfilled, (state, action) => {
             state.isProcessing = false;
+            const savedPath = typeof action.meta.arg === 'object' ? action.meta.arg?.filePath : undefined;
+            if (!isShownInView(state.file?.path, savedPath)) return;
             if (action.payload) {
                 const { newEditEntry } = action.payload;
                 const shouldPromptEdit = state.effectiveSettings.enableVersionNaming || state.effectiveSettings.enableVersionDescription;
